@@ -2,8 +2,8 @@
 <html>
   <head>
     <script src="https://cdn.jsdelivr.net/pyodide/v0.19.1/full/pyodide.js"></script>
-    <!-- <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/water.css@2/out/light.min.css"> -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/water.css@2/out/water.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/water.css@2/out/light.min.css">
+    <!-- <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/water.css@2/out/water.min.css"> -->
     <style>
       input {
         display: inline;
@@ -87,7 +87,9 @@
       </div>
     </div>
     
-    <button id="runButton" style="display: none" onclick="evaluatePython()">Run</button>
+    <div style="display:flex; justify-content: center">
+      <button id="runButton" style="display: none" onclick="evaluatePython()">Run</button>
+    </div>
     <br />
     <br />
     <div>Output:</div>
