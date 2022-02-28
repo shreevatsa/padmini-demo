@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <script src="https://cdn.jsdelivr.net/pyodide/v0.19.1/full/pyodide.js"></script>
+    <!-- <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/water.css@2/out/light.min.css"> -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/water.css@2/out/water.min.css">
+    <style>
+      input {
+        display: inline;
+      }
+    </style>
+  </head>
+
+  <body>
+    <textarea id="preOutput" style="width: 100%;" rows="1" disabled></textarea>
+    <h1>
+      Experimental demo of <a href="https://padmini.readthedocs.io/en/latest/">Padmini</a> <a href="https://padmini.readthedocs.io/en/latest/core-api.html">High-level API</a>
+    </h1>
+    <p>
+      (Last updated 2022-02-27)
+    </p>
+
+    <p><a href="https://padmini.readthedocs.io/en/latest/">Padmini</a> is 
+      <em>a Python library that generates Sanskrit words with their traditional derivations (prakriyā)</em>, 
+      <a href="https://groups.google.com/g/sanskrit-programmers/c/haH9LiPnfrE/m/NT4RylitGQAJ">by Arun</a>.
+      This is the code as of 2022-02-27, being run in a browser using <a href="https://pyodide.org/">Pyodide</a>.</p>
+      
+    <p>Enter the params below, and click "Run".
+      See the <a href="https://padmini.readthedocs.io/en/latest/core-api.html">Padmini docs</a> for details of how to use the API.</p>
+
+    <div>
+      <input type="radio" id="tinanta" name="what" value="tinanta" unchecked onchange="askArgs('tinanta')">
+      <label for="tinanta">tinanta</label>
+  
+      <input type="radio" id="subanta" name="what" value="subanta" unchecked onchange="askArgs('subanta')">
+      <label for="subanta">subanta</label>
+      </div>
+    <div>
+
+    <div id="argsTinanta" style="display: none">
+      <div>
+        <input type="text" id="dhatu" name="dhatu" value="BU" size="10">
+        <label for="dhatu">dhatu: str</label>
+      </div>
+
+      <div>
+        <input type="text" id="dhatu_code" name="dhatu_code" value="01.0001" size="10">
+        <label for="dhatu_code">dhatu_code: str</label>
+      </div>
+
+      <div>
+        <input type="text" id="la" name="la" value="la~w" size="10">
+        <label for="la">la: str</label>
+      </div>
+
+      <div>
+        <input type="text" id="tags0" name="tags0" value="[Tag.PRATHAMA, Tag.EKAVACANA]" size="30">
+        <label for="tags0">tags</label>
+      </div>
+
+      <div>
+        <input type="text" id="options0" name="options0" value="None" size="10">
+        <label for="options0">options</label>
+      </div>
+    </div>
+
+    <div id="argsSubanta" style="display: none">
+      <div>
+        <input type="text" id="pratipadika" name="pratipadika" value="rAma" size="10">
+        <label for="pratipadika">pratipadika: str</label>
+      </div>
+
+      <div>
+        <input type="text" id="linga" name="linga" value="Tag.PUM" size="10">
+        <label for="linga">linga: str</label>
+      </div>
+
+      <div>
+        <input type="text" id="tags1" name="tags1" value="[Tag.V6, Tag.EKAVACANA]" size="30">
+        <label for="tags1">tags</label>
+      </div>
+
+      <div>
+        <input type="text" id="options1" name="options1" value="None" size="10">
+        <label for="options1">options</label>
+      </div>
+    </div>
+    
+    <button id="runButton" style="display: none" onclick="evaluatePython()">Run</button>
+    <br />
+    <br />
+    <div>Output:</div>
+    <textarea id="output" style="width: 100%;" rows="30" disabled></textarea>
+
+    <script>
+      // init Pyodide
+      const preOutput = document.getElementById("preOutput");
+      preOutput.value = "Initializing... ";
+      async function main() {
+        let pyodide = await loadPyodide({
+          indexURL: "https://cdn.jsdelivr.net/pyodide/v0.19.1/full/",
+        });
+        preOutput.value += "Downloading... ";
+          // Downloading an archive
+          await pyodide.runPythonAsync(`
+            from pyodide.http import pyfetch
+            response = await pyfetch("/padmini/padmini.tar.gz") # .zip, .whl, ...
+            await response.unpack_archive() # by default, unpacks to the current dir
+          `)
+        preOutput.value += "Ready!";
+        return pyodide;
+      }
+      let pyodideReadyPromise = main();
+
+      // What options to show.
+      let kTinanta = 'tinanta';
+      let wordType = kTinanta;
+      function renderOptions(t) {
+        wordType = t;
+        if (t == kTinanta) {
+          document.getElementById('argsSubanta').style.display = 'none';
+          document.getElementById('argsTinanta').style.display = 'block';
+        } else {
+          document.getElementById('argsSubanta').style.display = 'block';
+          document.getElementById('argsTinanta').style.display = 'none';
+        }
+        document.getElementById('runButton').style.display = 'block';
+      }
+
+      async function askArgs(wordType) {
+        await pyodideReadyPromise;
+        console.log(wordType);
+        renderOptions(wordType);
+      }
+
+      const output = document.getElementById("output");
+      function addToOutput(s) {
+        output.value += s + "\n";
+      }
+
+      async function evaluatePython() {
+        let pyodide = await pyodideReadyPromise;
+        output.value = '';
+        try {
+          let dhatu = document.getElementById('dhatu').value;
+          let dhatu_code = document.getElementById('dhatu_code').value;
+          let la = document.getElementById('la').value;
+          let tags = document.getElementById(wordType == kTinanta ? 'tags0' : 'tags1').value;
+          let options = document.getElementById(wordType == kTinanta ? 'options0' : 'options1').value;
+          let pratipadika = document.getElementById('pratipadika').value;
+          let linga = document.getElementById('linga').value;
+          let call_code = (wordType == kTinanta ? `
+              tinanta('${dhatu}', '${dhatu_code}', '${la}', ${tags}, ${options})
+          ` : `
+              subanta('${pratipadika}', ${linga}, ${tags}, ${options})
+          `).replace(/\s+/g, ' ');
+          let code = `
+from padmini.ashtadhyayi import tinanta, subanta
+from padmini.constants import Tag
+from padmini.constants import Tag as T
+
+prakriya = ${call_code}
+
+(prakriya.text, prakriya.history)
+          `;
+          // console.log(`Calling loadPackagesFromImports…`);
+          // let pkgs = await pyodide.loadPackagesFromImports(code, alert, alert);
+          console.log(`Calling: ${call_code}`);
+          let [text, history] = pyodide.runPython(code);
+          addToOutput(text);
+          for (let h of history) {
+            addToOutput(h);
+          }
+        } catch (err) {
+          addToOutput(err);
+        }
+      }
+    </script>
+  </body>
+</html>
